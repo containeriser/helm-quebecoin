@@ -1,0 +1,19 @@
+apiVersion: v1
+name: quebecoin
+version: 1.0.0
+appVersion: 0.16.4.1
+description: Quebecoin is an innovative payment network and a new kind of money.
+keywords:
+  - quebecoin
+  - cryptocurrency
+  - blockchain
+home: https://quebecoin.ca/
+icon: https://quebecoin.ca/wp-content/uploads/2019/04/quebec_logo_jeffalt.png
+sources:
+  - https://github.com/containeriser/helm-quebecoin
+  - https://github.com/containeriser/docker-quebecoin
+  - https://github.com/ahmedbodi/quebecoin
+maintainers:
+  - name: Ahmed Bodiwala
+    email: ahmedbodi@crypto-expert.com
+engine: gotpl

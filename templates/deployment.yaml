@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "quebecoind.fullname" . }}
+  labels:
+    app: {{ template "quebecoind.name" . }}
+    chart: {{ template "quebecoind.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ template "quebecoind.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "quebecoind.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- if .Values.configurationFile }}
+      initContainers:
+        - name: copy-quebecoind-config
+          image: busybox
+          command: ['sh', '-c', 'cp /configmap/quebecoin.conf /quebecoin/.quebecoinv2/quebecoin.conf']
+          volumeMounts:
+            - name: configmap
+              mountPath: /configmap
+            - name: config
+              mountPath: /quebecoin/.quebecoinv2/
+      {{- end }}
+      containers:
+        - name: {{ template "quebecoind.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          ports:
+            - name: rpc
+              containerPort: {{ .Values.service.rpcPort }}
+            - name: p2p
+              containerPort: {{ .Values.service.p2pPort }}
+            - name: testnet
+              containerPort: {{ .Values.service.testnetPort }}
+            - name: testnetp2pport
+              containerPort: {{ .Values.service.testnetP2pPort }}
+          volumeMounts:
+            - name: data
+              mountPath: /quebecoin
+            {{- if .Values.configurationFile }}
+            - name: config
+              mountPath: /quebecoin/.quebecoinv2/quebecoin.conf
+              subPath: quebecoin.conf
+            {{- end }}
+      volumes:
+        {{- if .Values.configurationFile }}
+        - name: config
+          emptyDir: {}
+        - name: configmap
+          configMap:
+            name: {{ template "quebecoind.fullname" . }}
+        {{- end }}
+        - name: data
+        {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (include "quebecoind.fullname" .) }}
+        {{- else }}
+          emptyDir: {}
+        {{- end -}}
